@@ -1,28 +1,33 @@
-# Mail Suite (Lerna monorepo)
+# EMAILNOTIF
 
 This monorepo uses Lerna + npm workspaces and contains two packages:
 
 - packages/email-notify (backend)
 - packages/fe (frontend)
 
-Steps to use
 
-1. Move your existing frontend and backend into `mail-suite/packages`:
-   - Move `FE` content into `packages/fe` (or replace with this folder)
-   - Move `email-notify` content into `packages/email-notify`
+## How to Start
 
-2. From `mail-suite` run:
+1. Place your `.env` file in the root of the monorepo (`mail-suite/.env`).
+   - This file should contain all environment variables needed for both backend and frontend (e.g., `EMAIL_USER`, `EMAIL_PASS`, `VITE_API_URL`, etc.).
 
+2. Install dependencies from the root:
+   ```bash
    npm install
+   ```
 
-3. Bootstrap (links local packages):
-
+3. Bootstrap the packages (link local dependencies):
+   ```bash
    npx lerna bootstrap
+   ```
 
-4. Start both services:
-
+4. Start both backend and frontend together from the root:
+   ```bash
    npm run start
+   ```
 
-Notes
+---
+**Notes:**
+- The backend and frontend will both read environment variables from the root `.env` file.
 - Ensure `packages/email-notify/package.json` has a `start` script (e.g., `node server.js` or `nodemon server.js`).
-- Ensure `packages/fe/package.json` has `dev` script (Vite default is `dev`).
+- Ensure `packages/fe/package.json` has a `dev` script (Vite default is `dev`).
