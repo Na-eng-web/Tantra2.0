@@ -1,0 +1,18 @@
+{
+  "name": "mail-suite",
+  "version": "1.0.0",
+  "private": true,
+  "workspaces": [
+    "packages/*"
+  ],
+  "scripts": {
+    "bootstrap": "lerna bootstrap",
+    "start:backend": "npm --workspace=backend run start",
+    "start:frontend": "npm --workspace=frontend run dev",
+    "start": "concurrently \"npm run start:backend\" \"npm run start:frontend\""
+  },
+  "devDependencies": {
+    "concurrently": "^8.0.1",
+    "lerna": "^7.0.0"
+  }
+}
