@@ -1,13 +1,13 @@
-require('dotenv').config({ path: require('path').resolve(__dirname, '../../.env') });
+require('dotenv').config({ path: require('path').resolve(__dirname, '.env') });
 const express = require("express");
 const cors = require("cors");
 const bodyParser = require("body-parser");
 const nodemailer = require("nodemailer");
+const mongoose = require("mongoose");
 
 const app = express();
 app.use(cors());
 const PORT = process.env.BACKEND_PORT || 5000;
-console.log(process.env.VITE_API_URL)
 // Middleware
 app.use(bodyParser.urlencoded({ extended: true }));
 app.use(bodyParser.json());
@@ -21,28 +21,62 @@ const transporter = nodemailer.createTransport({
   }
 });
 
-// API to handle email submission
-app.post("/subscribe", (req, res) => {
-  const userEmail = req.body.email;
+// Connect to MongoDB Atlas
+mongoose.connect(process.env.MONGO_URI, {});
 
-  if (!userEmail) {
+const db = mongoose.connection;
+db.on("error", console.error.bind(console, "MongoDB connection error:"));
+db.once("open", () => {
+  console.log("Connected to MongoDB Atlas");
+});
+
+// Define a schema for subscriptions
+const subscriptionSchema = new mongoose.Schema({
+  firstName: String,
+  lastName: String,
+  email: String,
+  phone: String,
+  message: String,
+  date: { type: Date, default: Date.now },
+});
+
+const Subscription = mongoose.model("Subscription", subscriptionSchema);
+
+// Updated /subscribe endpoint to store data in MongoDB
+app.post("/subscribe", async (req, res) => {
+  const { firstName, lastName, email, phone, message } = req.body;
+
+  if (!email) {
     return res.status(400).send("Email is required");
   }
 
-    // Send mail to YOU when someone subscribes
+  try {
+    // Save subscription data to MongoDB
+    const newSubscription = new Subscription({
+      firstName,
+      lastName,
+      email,
+      phone,
+      message,
+    });
+
+    await newSubscription.save();
+    console.log("Subscription data saved to MongoDB");
+
+    // Send mail to YOU with all user details
     const notifyOptions = {
-      from: "sonwatkar777@gmail.com",
-      to: "sonwatkar777@gmail.com",
-      subject: "New Subscriber",
-      text: `A new user subscribed with email: ${userEmail}`
+      from: process.env.EMAIL_USER,
+      to: process.env.EMAIL_USER,
+      subject: "New Subscriber Details",
+      text: `New subscription details:\n\nFirst Name: ${firstName}\nLast Name: ${lastName}\nEmail: ${email}\nPhone: ${phone}\nMessage: ${message}`,
     };
 
-    // Send welcome email to subscriber
+    // Send acknowledgment email to the user
     const welcomeOptions = {
-      from: "sonwatkar777@gmail.com",
-      to: userEmail,
-      subject: "Welcome to Email Notify!",
-      text: "Thank you for subscribing! You will now receive updates from us."
+      from: process.env.EMAIL_USER,
+      to: email,
+      subject: "Thank you for subscribing!",
+      text: `Dear ${firstName},\n\nThank you for subscribing.\n\nWe confirm that your information has been received. Our team will review your submission and contact you if further details are required.\n\nShould you have any queries, please feel free to reach out to us.\n\nSincerely,  \nThe Team`,
     };
 
     transporter.sendMail(notifyOptions, (error, info) => {
@@ -51,18 +85,21 @@ app.post("/subscribe", (req, res) => {
         return res.status(500).send("Error sending notification email");
       } else {
         console.log("Notification email sent: " + info.response);
-        // Send welcome email to subscriber
         transporter.sendMail(welcomeOptions, (err, info2) => {
           if (err) {
             console.log(err);
-            return res.status(500).send("Error sending welcome email");
+            return res.status(500).send("Error sending acknowledgment email");
           } else {
-            console.log("Welcome email sent: " + info2.response);
-            res.send("Subscription successful. Welcome email sent.");
+            console.log("Acknowledgment email sent: " + info2.response);
+            res.send("Subscription successful. Emails sent and data saved.");
           }
         });
       }
     });
+  } catch (err) {
+    console.error("Error saving subscription data:", err);
+    res.status(500).send("Error saving subscription data");
+  }
 });
 
 app.listen(PORT, () => {
