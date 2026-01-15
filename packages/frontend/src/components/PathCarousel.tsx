@@ -41,7 +41,7 @@ const PathCarousel = () => {
 	const [currentIndex, setCurrentIndex] = useState(1); // Start at 1 because of cloned last slide at position 0
 	const [isClient, setIsClient] = useState(false);
 	const [isAutoPlaying, setIsAutoPlaying] = useState(true);
-	const [isTransitioning, setIsTransitioning] = useState(true);
+	const [isTransitioning,   setIsTransitioning] = useState(true);
 	const intervalRef = useRef<NodeJS.Timeout | null>(null);
 
 	// Hydration safety
